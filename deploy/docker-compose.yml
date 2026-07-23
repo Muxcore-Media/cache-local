@@ -1,0 +1,30 @@
+services:
+  core:
+    image: ghcr.io/muxcore-media/core:latest
+    ports:
+      - "9090:9090"
+    environment:
+      MUXCORE_INSECURE_DISABLE_TLS: "true"
+      MUXCORE_LOG_LEVEL: debug
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--tries=1", "--spider", "http://localhost:9090/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  cache-local:
+    build:
+      context: ../..
+      dockerfile: cache-local/Dockerfile
+    ports:
+      - "9610"
+    environment:
+      MUXCORE_GRPC_ADDR: core:9090
+      MUXCORE_INSECURE_DISABLE_TLS: "true"
+      MUXCORE_LOG_LEVEL: debug
+      MUXCORE_MODULE_ID: cache-local
+      CACHE_LOCAL_GRPC_ADDR: ":9610"
+    depends_on:
+      core:
+        condition: service_healthy
