@@ -1,0 +1,14 @@
+{
+  "name": "Cache Local",
+  "description": "In-memory local read-through cache for the storage orchestrator",
+  "version": "0.1.0",
+  "author": "MuxCore",
+  "roles": [
+    "infrastructure"
+  ],
+  "capabilities": [
+    "cache.local",
+    "cache.memory"
+  ],
+  "contracts": []
+}
