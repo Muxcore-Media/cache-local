@@ -45,7 +45,12 @@ Core must be reachable (dev: `MUXCORE_INSECURE_DISABLE_TLS=true ./muxcored` in `
 
 ## Capability
 
-`cache.local` — Local storage read-through cache
+| Capability | Role |
+|------------|------|
+| `cache.local` | **Canonical** — process-local in-memory `CacheLayerService` |
+| `cache.memory` | **Legacy alias** for the retired `cache-memory` dump; same implementation |
+
+See [COMPATIBILITY.md](COMPATIBILITY.md). Prefer [`cache-redis`](https://github.com/Muxcore-Media/cache-redis) for multi-host shared cache.
 
 ## License
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-08-09
+
 ### Added
 
-- Initial project scaffold: in-memory `CacheLayerService` sidecar (`cache.local`)
+- Initial in-memory `CacheLayerService` sidecar (`cache.local`).
+- Legacy `cache.memory` capability alias for compatibility with the retired `cache-memory` dump (same implementation).
+- COMPATIBILITY notes clarifying `cache.local` vs `cache.memory`.
