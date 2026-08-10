@@ -14,14 +14,20 @@ func TestModuleInfo(t *testing.T) {
 	if info.Version == "" {
 		t.Error("version must not be empty")
 	}
-	found := false
+	foundLocal, foundMemory := false, false
 	for _, c := range info.Capabilities {
 		if c == "cache.local" {
-			found = true
+			foundLocal = true
+		}
+		if c == "cache.memory" {
+			foundMemory = true
 		}
 	}
-	if !found {
+	if !foundLocal {
 		t.Error("expected cache.local capability")
+	}
+	if !foundMemory {
+		t.Error("expected legacy cache.memory alias")
 	}
 	if info.HTTPAddr != ":9610" {
 		t.Errorf("HTTPAddr = %q, want :9610", info.HTTPAddr)

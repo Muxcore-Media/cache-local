@@ -1,6 +1,6 @@
 {
   "name": "Cache Local",
-  "description": "In-memory local read-through cache for the storage orchestrator",
+  "description": "In-memory process-local CacheLayer (canonical cache.local; also advertises legacy cache.memory alias)",
   "version": "0.1.0",
   "author": "MuxCore",
   "roles": [

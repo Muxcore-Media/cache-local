@@ -50,7 +50,7 @@ func (m *Module) Info() contracts.ModuleInfo {
 		Name:         "Cache Local",
 		Version:      "0.1.0",
 		Roles:        []string{"infrastructure"},
-		Description:  "In-memory local read-through cache for the storage orchestrator",
+		Description:  "In-memory process-local CacheLayer (canonical cache.local; also advertises legacy cache.memory alias)",
 		Author:       "MuxCore",
 		Capabilities: []string{contracts.CapabilityCacheLocal, "cache.memory"},
 		HTTPAddr:     m.grpcAddr,
