@@ -46,6 +46,23 @@ func NewWithTTL(ttl time.Duration) *Cache {
 	return c
 }
 
+// DefaultTTL returns the TTL applied to new Set entries.
+func (c *Cache) DefaultTTL() time.Duration {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.ttl
+}
+
+// SetDefaultTTL updates the TTL used for subsequent Set calls (existing entries keep their expiry).
+func (c *Cache) SetDefaultTTL(ttl time.Duration) {
+	if ttl <= 0 {
+		ttl = defaultTTL
+	}
+	c.mu.Lock()
+	c.ttl = ttl
+	c.mu.Unlock()
+}
+
 func (c *Cache) sweepLoop() {
 	ticker := time.NewTicker(sweepInterval)
 	defer ticker.Stop()
