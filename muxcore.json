@@ -1,14 +1,15 @@
 {
   "name": "Cache Local",
   "description": "In-memory process-local CacheLayer (canonical cache.local; also advertises legacy cache.memory alias)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "MuxCore",
   "roles": [
     "infrastructure"
   ],
   "capabilities": [
     "cache.local",
-    "cache.memory"
+    "cache.memory",
+    "settings"
   ],
   "contracts": []
 }
