@@ -40,7 +40,7 @@ func NewModule(cfg Config) *Module {
 		cfg.ID = "cache-local"
 	}
 	if cfg.GRPCAddr == "" {
-		cfg.GRPCAddr = ":9610"
+		cfg.GRPCAddr = ":9602"
 	}
 	if v := os.Getenv("CACHE_LOCAL_GRPC_ADDR"); v != "" {
 		cfg.GRPCAddr = v

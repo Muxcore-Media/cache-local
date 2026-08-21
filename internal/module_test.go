@@ -36,8 +36,8 @@ func TestModuleInfo(t *testing.T) {
 	if !foundSettings {
 		t.Error("expected settings capability")
 	}
-	if info.HTTPAddr != ":9610" {
-		t.Errorf("HTTPAddr = %q, want :9610", info.HTTPAddr)
+	if info.HTTPAddr != ":9602" {
+		t.Errorf("HTTPAddr = %q, want :9602", info.HTTPAddr)
 	}
 }
 

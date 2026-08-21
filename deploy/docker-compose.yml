@@ -18,13 +18,13 @@ services:
       context: ../..
       dockerfile: cache-local/Dockerfile
     ports:
-      - "9610"
+      - "9602"
     environment:
       MUXCORE_GRPC_ADDR: core:9090
       MUXCORE_INSECURE_DISABLE_TLS: "true"
       MUXCORE_LOG_LEVEL: debug
       MUXCORE_MODULE_ID: cache-local
-      CACHE_LOCAL_GRPC_ADDR: ":9610"
+      CACHE_LOCAL_GRPC_ADDR: ":9602"
     depends_on:
       core:
         condition: service_healthy
