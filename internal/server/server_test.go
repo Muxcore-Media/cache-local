@@ -25,7 +25,7 @@ func TestCacheLayerService_RoundTrip(t *testing.T) {
 	}
 	grpcSrv := grpc.NewServer()
 	srv.RegisterWithGRPC(grpcSrv)
-	go grpcSrv.Serve(lis)
+	go func() { _ = grpcSrv.Serve(lis) }()
 	t.Cleanup(grpcSrv.GracefulStop)
 
 	conn, err := grpc.NewClient(lis.Addr().String(),

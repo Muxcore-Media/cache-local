@@ -61,7 +61,7 @@ func TestSettings_DefaultTTL(t *testing.T) {
 	if err := m2.Init(ctx); err != nil {
 		t.Fatal(err)
 	}
-	defer m2.Stop(ctx)
+	defer func() { _ = m2.Stop(ctx) }()
 	if err := m2.UpdateSetting("CACHE_LOCAL_TTL", "10s"); err != nil {
 		t.Fatal(err)
 	}
