@@ -117,3 +117,129 @@ func TestConcurrentAccess(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestSweeperRemovesExpiredWithoutGet(t *testing.T) {
+	c := NewWithConfig(Config{TTL: 15 * time.Millisecond, SweepInterval: 10 * time.Millisecond})
+	t.Cleanup(c.Close)
+	ctx := context.Background()
+
+	if err := c.Set(ctx, "sweep-me", []byte("v")); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(70 * time.Millisecond)
+
+	c.mu.RLock()
+	_, exists := c.entries["sweep-me"]
+	c.mu.RUnlock()
+	if exists {
+		t.Fatal("expected sweeper to remove expired key without Get")
+	}
+}
+
+func TestSetDefaultTTLDoesNotRewriteExistingExpiry(t *testing.T) {
+	c := NewWithTTL(200 * time.Millisecond)
+	t.Cleanup(c.Close)
+	ctx := context.Background()
+
+	if err := c.Set(ctx, "k", []byte("v")); err != nil {
+		t.Fatal(err)
+	}
+	c.SetDefaultTTL(5 * time.Millisecond)
+	time.Sleep(120 * time.Millisecond)
+	if _, ok := c.Get(ctx, "k"); !ok {
+		t.Fatal("expected original TTL to remain after SetDefaultTTL")
+	}
+}
+
+func TestExpireDeleteDoesNotClobberConcurrentSet(t *testing.T) {
+	c := NewWithTTL(30 * time.Millisecond)
+	t.Cleanup(c.Close)
+	ctx := context.Background()
+
+	if err := c.Set(ctx, "race", []byte("old")); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(35 * time.Millisecond)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		_, _ = c.Get(ctx, "race")
+	}()
+	go func() {
+		defer wg.Done()
+		_ = c.Set(ctx, "race", []byte("new"))
+	}()
+	wg.Wait()
+
+	got, ok := c.Get(ctx, "race")
+	if !ok || string(got) != "new" {
+		t.Fatalf("concurrent Set clobbered: ok=%v got=%q", ok, got)
+	}
+}
+
+func TestGetReturnsCopy(t *testing.T) {
+	c := New()
+	t.Cleanup(c.Close)
+	ctx := context.Background()
+
+	orig := []byte("data")
+	if err := c.Set(ctx, "k", orig); err != nil {
+		t.Fatal(err)
+	}
+	got, ok := c.Get(ctx, "k")
+	if !ok {
+		t.Fatal("expected hit")
+	}
+	got[0] = 'X'
+	got2, ok := c.Get(ctx, "k")
+	if !ok || string(got2) != "data" {
+		t.Fatalf("Get returned shared buffer: %q", got2)
+	}
+}
+
+func TestMaxEntryBytes(t *testing.T) {
+	c := NewWithConfig(Config{TTL: time.Minute, MaxEntryBytes: 4, MaxBytes: 100})
+	t.Cleanup(c.Close)
+	ctx := context.Background()
+
+	if err := c.Set(ctx, "k", []byte("12345")); err == nil {
+		t.Fatal("expected entry too large error")
+	}
+	if err := c.Set(ctx, "k", []byte("1234")); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMaxBytes(t *testing.T) {
+	c := NewWithConfig(Config{TTL: time.Minute, MaxEntryBytes: 10, MaxBytes: 12})
+	t.Cleanup(c.Close)
+	ctx := context.Background()
+
+	if err := c.Set(ctx, "a", []byte("123456")); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Set(ctx, "b", []byte("1234567")); err == nil {
+		t.Fatal("expected cache full error")
+	}
+}
+
+func TestMaxEntries(t *testing.T) {
+	c := NewWithConfig(Config{TTL: time.Minute, MaxEntries: 2, MaxBytes: 1 << 20, MaxEntryBytes: 64})
+	t.Cleanup(c.Close)
+	ctx := context.Background()
+
+	if err := c.Set(ctx, "a", []byte("1")); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Set(ctx, "b", []byte("2")); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Set(ctx, "c", []byte("3")); err == nil {
+		t.Fatal("expected too many keys error")
+	}
+	if err := c.Set(ctx, "a", []byte("updated")); err != nil {
+		t.Fatal("expected update of existing key to succeed")
+	}
+}

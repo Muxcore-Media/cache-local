@@ -4,7 +4,7 @@
 
 | Module Version | Core Version | Status |
 |----------------|-------------|--------|
-| v0.1.0         | v0.4.0+     | Current |
+| v0.1.1         | v0.5.8+     | Current |
 
 ## Contracts
 
@@ -23,6 +23,8 @@
 Do **not** run `cache-local` alongside another module that also claims `cache.local` / `cache.memory`. Prefer `cache-redis` when you need a shared cache across hosts.
 
 Data is **not durable**: restart clears the map. Single-node only.
+
+Default listen address is **`:9602`** (`CACHE_LOCAL_GRPC_ADDR`). Legacy installers may still reference `:9600` (the `cache-redis` port).
 
 ## Breaking Changes
 

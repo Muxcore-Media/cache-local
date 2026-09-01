@@ -6,36 +6,49 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	"github.com/Muxcore-Media/cache-local/internal/cache"
 	"github.com/Muxcore-Media/cache-local/internal/server"
 	cachev1 "github.com/Muxcore-Media/core/proto/gen/muxcore/cache/v1"
 )
 
-func TestCacheLayerService_RoundTrip(t *testing.T) {
-	c := cache.New()
-	t.Cleanup(c.Close)
+func startServer(t *testing.T, c *cache.Cache) (cachev1.CacheLayerServiceClient, func()) {
+	t.Helper()
 	srv := server.New(c)
+	maxRecv := int(server.MaxValueBytes + 1024)
+	grpcSrv := grpc.NewServer(
+		grpc.MaxRecvMsgSize(maxRecv),
+		grpc.MaxSendMsgSize(maxRecv),
+	)
+	srv.RegisterWithGRPC(grpcSrv)
 
 	var lc net.ListenConfig
 	lis, err := lc.Listen(context.Background(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
-	grpcSrv := grpc.NewServer()
-	srv.RegisterWithGRPC(grpcSrv)
 	go func() { _ = grpcSrv.Serve(lis) }()
-	t.Cleanup(grpcSrv.GracefulStop)
 
 	conn, err := grpc.NewClient(lis.Addr().String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatalf("dial: %v", err)
 	}
-	t.Cleanup(func() { _ = conn.Close() })
+	cleanup := func() {
+		_ = conn.Close()
+		grpcSrv.GracefulStop()
+	}
+	return cachev1.NewCacheLayerServiceClient(conn), cleanup
+}
 
-	client := cachev1.NewCacheLayerServiceClient(conn)
+func TestCacheLayerService_RoundTrip(t *testing.T) {
+	c := cache.New()
+	t.Cleanup(c.Close)
+	client, cleanup := startServer(t, c)
+	t.Cleanup(cleanup)
 	ctx := context.Background()
 
 	miss, err := client.Get(ctx, &cachev1.GetCacheLayerRequest{Key: "k"})
@@ -69,5 +82,58 @@ func TestCacheLayerService_RoundTrip(t *testing.T) {
 	}
 	if after.GetFound() {
 		t.Fatal("expected invalidate")
+	}
+}
+
+func TestCacheLayerService_EmptyKey(t *testing.T) {
+	c := cache.New()
+	t.Cleanup(c.Close)
+	client, cleanup := startServer(t, c)
+	t.Cleanup(cleanup)
+	ctx := context.Background()
+
+	_, err := client.Get(ctx, &cachev1.GetCacheLayerRequest{Key: ""})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("Get empty key: code=%v err=%v", status.Code(err), err)
+	}
+	_, err = client.Set(ctx, &cachev1.SetCacheLayerRequest{Key: "", Value: []byte("x")})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("Set empty key: code=%v err=%v", status.Code(err), err)
+	}
+}
+
+func TestCacheLayerService_EmptyPrefixInvalidate(t *testing.T) {
+	c := cache.New()
+	t.Cleanup(c.Close)
+	client, cleanup := startServer(t, c)
+	t.Cleanup(cleanup)
+	ctx := context.Background()
+
+	if _, err := client.Set(ctx, &cachev1.SetCacheLayerRequest{Key: "keep", Value: []byte("1")}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Invalidate(ctx, &cachev1.InvalidateCacheLayerRequest{Prefix: ""}); err != nil {
+		t.Fatal(err)
+	}
+	hit, err := client.Get(ctx, &cachev1.GetCacheLayerRequest{Key: "keep"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hit.GetFound() {
+		t.Fatal("empty prefix invalidate should be no-op")
+	}
+}
+
+func TestCacheLayerService_OversizeValue(t *testing.T) {
+	c := cache.New()
+	t.Cleanup(c.Close)
+	client, cleanup := startServer(t, c)
+	t.Cleanup(cleanup)
+	ctx := context.Background()
+
+	oversize := make([]byte, server.MaxValueBytes+1)
+	_, err := client.Set(ctx, &cachev1.SetCacheLayerRequest{Key: "big", Value: oversize})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("oversize Set: code=%v err=%v", status.Code(err), err)
 	}
 }

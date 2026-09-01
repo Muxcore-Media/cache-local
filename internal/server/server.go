@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -10,6 +11,9 @@ import (
 	"github.com/Muxcore-Media/cache-local/internal/cache"
 	cachev1 "github.com/Muxcore-Media/core/proto/gen/muxcore/cache/v1"
 )
+
+// MaxValueBytes is the largest value accepted by Set (matches cache.DefaultMaxEntryBytes).
+const MaxValueBytes = cache.DefaultMaxEntryBytes
 
 type Server struct {
 	cachev1.UnimplementedCacheLayerServiceServer
@@ -39,8 +43,18 @@ func (s *Server) Set(ctx context.Context, req *cachev1.SetCacheLayerRequest) (*c
 	if req.GetKey() == "" {
 		return nil, status.Error(codes.InvalidArgument, "key is required")
 	}
+	if int64(len(req.GetValue())) > MaxValueBytes {
+		return nil, status.Errorf(codes.InvalidArgument, "value exceeds maximum size of %d bytes", MaxValueBytes)
+	}
 	if err := s.cache.Set(ctx, req.GetKey(), req.GetValue()); err != nil {
-		return nil, status.Error(codes.Internal, "set failed")
+		switch {
+		case errors.Is(err, cache.ErrEntryTooLarge):
+			return nil, status.Errorf(codes.InvalidArgument, "value exceeds maximum size of %d bytes", MaxValueBytes)
+		case errors.Is(err, cache.ErrCacheFull), errors.Is(err, cache.ErrTooManyKeys):
+			return nil, status.Error(codes.ResourceExhausted, err.Error())
+		default:
+			return nil, status.Error(codes.Internal, "set failed")
+		}
 	}
 	return &cachev1.SetCacheLayerResponse{Status: "ok"}, nil
 }

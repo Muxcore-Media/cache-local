@@ -7,6 +7,7 @@ import (
 )
 
 func TestModuleInfo(t *testing.T) {
+	Version = "0.1.1"
 	m := NewModule(Config{})
 	info := m.Info()
 	if info.ID != "cache-local" {
@@ -14,6 +15,9 @@ func TestModuleInfo(t *testing.T) {
 	}
 	if info.Version != "0.1.1" {
 		t.Errorf("Version = %q", info.Version)
+	}
+	if info.MinCoreVersion != MinCoreVersion {
+		t.Errorf("MinCoreVersion = %q, want %q", info.MinCoreVersion, MinCoreVersion)
 	}
 	foundLocal, foundMemory, foundSettings := false, false, false
 	for _, c := range info.Capabilities {
@@ -44,7 +48,10 @@ func TestModuleInfo(t *testing.T) {
 func TestSettings_DefaultTTL(t *testing.T) {
 	m := NewModule(Config{})
 	defs := m.Settings()
-	if len(defs) != 1 || defs[0].Key != "default_ttl" {
+	if len(defs) != 4 {
+		t.Fatalf("defs=%+v", defs)
+	}
+	if defs[0].Key != "default_ttl" {
 		t.Fatalf("defs=%+v", defs)
 	}
 	if err := m.UpdateSetting("default_ttl", "30s"); err != nil {
@@ -84,5 +91,13 @@ func TestModuleLifecycle(t *testing.T) {
 	}
 	if err := m.Stop(ctx); err != nil {
 		t.Fatalf("Stop: %v", err)
+	}
+}
+
+func TestInitRejectsInvalidTTL(t *testing.T) {
+	t.Setenv("CACHE_LOCAL_TTL", "not-a-duration")
+	m := NewModule(Config{GRPCAddr: "127.0.0.1:0"})
+	if err := m.Init(context.Background()); err == nil {
+		t.Fatal("expected Init error for invalid CACHE_LOCAL_TTL")
 	}
 }
