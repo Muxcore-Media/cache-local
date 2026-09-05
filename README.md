@@ -26,7 +26,8 @@ No external store. Data is process-local and lost on restart.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CACHE_LOCAL_GRPC_ADDR` | `:9602` | gRPC listen address |
+| `CACHE_LOCAL_GRPC_ADDR` | `127.0.0.1:9602` | gRPC listen address (loopback by default) |
+| `MUXCORE_INSECURE_DISABLE_TLS` | — | Set `true` for plaintext gRPC (dev only) |
 | `MUXCORE_GRPC_ADDR` | — | Core mesh address (or `--muxcore-mesh-addr`) |
 | `MUXCORE_MODULE_ID` | `cache-local` | Module ID override (or `--muxcore-module-id`) |
 
