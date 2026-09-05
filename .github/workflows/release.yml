@@ -10,14 +10,22 @@ jobs:
       contents: write
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: Muxcore-Media/mvp/.github/actions/checkout-mirror@main
         with:
-          path: core
-          repository: Muxcore-Media/core
-      - uses: actions/checkout@v4
-        with:
-          path: cache-local
-          fetch-depth: 0
+          token: ${{ secrets.MUXCORE_CI_TOKEN || github.token }}
+      - name: Prepare monorepo layout
+        run: |
+          dir=cache-local
+          mkdir -p "$dir"
+          shopt -s dotglob
+          for item in * .[^.]*; do
+            [[ "$item" == "$dir" ]] && continue
+            [[ -e "$item" ]] || continue
+            mv "$item" "$dir/"
+          done
+          git clone --depth 1 \
+            "https://x-access-token:${{ secrets.MUXCORE_CI_TOKEN || github.token }}@github.com/Muxcore-Media/core.git" \
+            core
       - uses: actions/setup-go@v7
         with:
           go-version: "1.26"
