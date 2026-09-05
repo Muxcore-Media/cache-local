@@ -36,8 +36,8 @@ func TestModuleInfo(t *testing.T) {
 	if !foundSettings {
 		t.Error("expected settings capability")
 	}
-	if info.HTTPAddr != ":9602" {
-		t.Errorf("HTTPAddr = %q, want :9602", info.HTTPAddr)
+	if info.HTTPAddr != "127.0.0.1:9602" {
+		t.Errorf("HTTPAddr = %q, want 127.0.0.1:9602", info.HTTPAddr)
 	}
 }
 
@@ -67,6 +67,19 @@ func TestSettings_DefaultTTL(t *testing.T) {
 	}
 	if got := m2.cache.DefaultTTL(); got != 10*time.Second {
 		t.Fatalf("cache ttl=%v", got)
+	}
+}
+
+func TestResolveGRPCAddr_InsecureLoopback(t *testing.T) {
+	t.Setenv("MUXCORE_INSECURE_DISABLE_TLS", "true")
+	if got := resolveGRPCAddr(":9602"); got != "127.0.0.1:9602" {
+		t.Fatalf("got %q", got)
+	}
+	if got := resolveGRPCAddr("0.0.0.0:9602"); got != "127.0.0.1:9602" {
+		t.Fatalf("got %q", got)
+	}
+	if got := resolveGRPCAddr("192.168.1.1:9602"); got != "192.168.1.1:9602" {
+		t.Fatalf("got %q", got)
 	}
 }
 
