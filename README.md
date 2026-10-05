@@ -1,6 +1,6 @@
 # Cache Local
 
-[![CI](https://git.zem.systems/muxcore/cache-local/actions/workflows/ci.yml/badge.svg)](https://github.com/Muxcore-Media/cache-local/actions)
+[![CI](https://github.com/Muxcore-Media/cache-local/actions/workflows/ci.yml/badge.svg)](https://github.com/Muxcore-Media/cache-local/actions)
 [![Go Version](https://img.shields.io/badge/Go-1.26-blue)](https://go.dev/)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 
