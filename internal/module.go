@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	manifest "github.com/Muxcore-Media/cache-local"
 	"github.com/Muxcore-Media/cache-local/internal/cache"
 	"github.com/Muxcore-Media/cache-local/internal/grpctls"
 	"github.com/Muxcore-Media/cache-local/internal/server"
@@ -68,7 +69,7 @@ func (m *Module) Info() contracts.ModuleInfo {
 	return contracts.ModuleInfo{
 		ID:           m.id,
 		Name:         "Cache Local",
-		Version:      "0.1.1",
+		Version:      modulesdk.ManifestVersion(manifest.ManifestJSON),
 		Roles:        []string{"infrastructure"},
 		Description:  "In-memory process-local CacheLayer (canonical cache.local; also advertises legacy cache.memory alias)",
 		Author:       "MuxCore",

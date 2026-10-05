@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	manifest "github.com/Muxcore-Media/cache-local"
+	modulesdk "github.com/Muxcore-Media/core/sdk/go/module"
 )
 
 func TestModuleInfo(t *testing.T) {
@@ -12,7 +15,7 @@ func TestModuleInfo(t *testing.T) {
 	if info.ID != "cache-local" {
 		t.Errorf("ID = %q", info.ID)
 	}
-	if info.Version != "0.1.1" {
+	if info.Version != modulesdk.ManifestVersion(manifest.ManifestJSON) {
 		t.Errorf("Version = %q", info.Version)
 	}
 	foundLocal, foundMemory, foundSettings := false, false, false
